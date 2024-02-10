@@ -6,3 +6,7 @@ dependencies:
   - name: external-dns
     version: 0.1.0
     repository: "file://../external-dns"
+dependencies:
+  - name: crds
+    version: 0.1.0
+    repository: "file://../crds"
