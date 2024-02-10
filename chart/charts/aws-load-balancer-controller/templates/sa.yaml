@@ -1,0 +1,14 @@
+{{- $eks_lb_role_arn := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.eks_lb_role_arn -}}
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aws-load-balancer-controller
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: aws-load-balancer-controller
+    app.kubernetes.io/component: controller
+  annotations:
+    eks.amazonaws.com/role-arn: {{ $eks_lb_role_arn }}
+    app.kubernetes.io/managed-by: "Helm"
+    eks.amazonaws.com/sts-regional-endpoints: "true"

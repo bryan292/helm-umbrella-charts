@@ -1,0 +1,27 @@
+{{- $domain := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.domain -}}
+{{- $eks_external_dns_role_arn := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.eks_external_dns_role_arn -}}
+
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: external-dns
+  namespace: external-dns
+spec:
+  interval: 1m
+  chart:
+    spec:
+      chart: external-dns
+      version: "1.14.3" 
+      sourceRef:
+        kind: HelmRepository
+        name: external-dns
+        namespace: flux-system
+  values:
+    provider: aws
+    serviceAccount:
+      create: false
+      name: external-dns
+    domainFilters: 
+      - {{ $domain }}
+    aws:
+      assumeRole: {{ $eks_external_dns_role_arn }}

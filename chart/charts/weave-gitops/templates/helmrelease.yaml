@@ -1,0 +1,25 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: gitops-server
+  namespace: flux-system
+spec:
+  interval: 1m
+  chart:
+    spec:
+      chart: charts/gitops-server
+      sourceRef:
+        kind: GitRepository
+        name: weave-gitops-server
+        namespace: flux-system
+  values: {
+    "rbac": {
+      "create": true,
+      # TODO: change this to admin
+      "impersonationResourceNames": ["admin"]
+    },
+    "adminUser": {
+      "create": true,
+      "passwordHash": "$2a$12$qFfhh5Xjc49OgHOS50FjgOO5UHJrSW0yyezPtrJavAS6m.DuiHbi2"
+    }
+  }
