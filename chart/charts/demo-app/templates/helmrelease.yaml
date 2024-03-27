@@ -17,7 +17,7 @@ spec:
         name: bryan292
         namespace: flux-system
   values: {
-    domain: {{ $domain }}.,
-    enviroment: {{ $environment }}.,
-    cluster_name: {{ $cluster_name }}.
+    domain: {{ $domain }},
+    enviroment: {{ $environment }},
+    cluster_name: {{ $cluster_name }}
   }
