@@ -1,4 +1,4 @@
 apiVersion: v2
-name: aws-load-balancer-controller
+name: cluster-autoscaler
 description: A Helm chart for AWS Load Balancer Controller
 version: 0.0.1
