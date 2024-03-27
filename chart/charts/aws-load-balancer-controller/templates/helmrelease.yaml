@@ -26,4 +26,6 @@ spec:
     serviceAccount:
       create: false
       name: aws-load-balancer-controller
-      
+  dependsOn:
+    - name: cert-manager
+      namespace: cert-manager

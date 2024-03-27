@@ -15,8 +15,8 @@ spec:
   values: {
     "rbac": {
       "create": true,
-      # TODO: change this to admin
-      "impersonationResourceNames": ["admin"]
+      # TODO: change this to admin, check further is not only change this
+      "impersonationResourceNames": ["gitops-test-user"]
     },
     "adminUser": {
       "create": true,

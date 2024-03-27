@@ -1,0 +1,36 @@
+{{- $domain := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.domain -}}
+{{- $cluster_name := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.cluster_name -}}
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: weave-gitops-server-ingress
+  namespace: flux-system
+  annotations:
+    # Ingress class for AWS Load Balancer Controller
+    kubernetes.io/ingress.class: "alb"
+    # Configure ALB as internet-facing
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    # Use IP as the target type for the Load Balancer
+    alb.ingress.kubernetes.io/target-type: ip
+    # Annotations for automatic TLS with Cert-Manager
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    # Configure automatic SSL redirection
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+spec:
+  rules:
+    - host: weave-gitops-{{ $cluster_name }}.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gitops-server-weave-gitops
+                port:
+                  number: 9001
+  tls:
+    - hosts:
+        - weave-gitops-{{ $cluster_name }}.{{ $domain }}
+      secretName: weave-gitops-tls

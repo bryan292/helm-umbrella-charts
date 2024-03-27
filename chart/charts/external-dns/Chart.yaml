@@ -1,11 +1,4 @@
 apiVersion: v2
 name: external-dns
 description: A Helm chart for ExternalDNS
-version: 0.1.0
-dependencies:
-  - name: cert-manager
-    version: 0.1.0
-    repository: "file://../cert-manager"
-  - name: aws-load-balancer-controller
-    version: 0.1.0
-    repository: "file://../aws-load-balancer-controller"
+version: 0.0.1
