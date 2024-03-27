@@ -1,0 +1,29 @@
+{{- $region := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.region -}}
+{{- $vpc_id := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.vpc_id -}}
+{{- $cluster_name := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.cluster_name -}}
+
+
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: cluster-autoscaler
+  namespace: kube-system
+spec:
+  interval: 1m
+  chart:
+    spec:
+      chart: cluster-autoscaler
+      version: "9.36.0" 
+      sourceRef:
+        kind: HelmRepository
+        name: autoscaler
+        namespace: flux-system
+  values:
+    autoDiscovery:
+      clusterName: {{ $cluster_name }}
+    awsRegion: {{ $region }}
+    rbac:
+      create: true
+      serviceAccount:
+        create: false
+        name: cluster-autoscaler

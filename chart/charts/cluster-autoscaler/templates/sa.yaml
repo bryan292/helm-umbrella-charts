@@ -1,0 +1,13 @@
+{{- $cluster_autoscaler_role_arn := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.cluster_autoscaler_role_arn -}}
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cluster-autoscaler
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: cluster-autoscaler
+    app.kubernetes.io/component: controller
+  annotations:
+    eks.amazonaws.com/role-arn: {{ $cluster_autoscaler_role_arn }}
+    app.kubernetes.io/managed-by: "Helm"
