@@ -1,11 +1,13 @@
 {{- $domain := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.domain -}}
 {{- $cluster_name := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.cluster_name -}}
 {{- $environment := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.environment -}}
+{{- $repository := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.repository -}}
+{{- $app_name := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.app_name -}}
 
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
-  name: devops-assignment-app
+  name: {{ $app_name }}
   namespace: flux-system
 spec:
   interval: 1m
@@ -14,7 +16,7 @@ spec:
       chart: chart
       sourceRef:
         kind: GitRepository
-        name: bryan292
+        name: {{ $repository }}
         namespace: flux-system
   values: {
     domain: {{ $domain }},

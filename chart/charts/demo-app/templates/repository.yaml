@@ -1,10 +1,14 @@
+{{- $repository := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.repository -}}
+{{- $app_name := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.app_name -}}
+{{- $branch := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.branch -}}
+
 apiVersion: source.toolkit.fluxcd.io/v1beta1
 kind: GitRepository
 metadata:
-  name: bryan292
+  name: {{ $app_name }}
   namespace: flux-system
 spec:
   interval: 1m
-  url: "https://github.com/bryan292/devops-assignment"
+  url: {{ $repository }}
   ref:
-    branch: "main"
+    branch: {{ $branch }}
