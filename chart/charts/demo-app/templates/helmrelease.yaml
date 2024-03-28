@@ -16,7 +16,7 @@ spec:
       chart: chart
       sourceRef:
         kind: GitRepository
-        name: {{ $repository }}
+        name: {{ $app_name }}
         namespace: flux-system
   values: {
     domain: {{ $domain }},
