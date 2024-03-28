@@ -3,7 +3,7 @@
 {{- $cluster_name := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.cluster_name -}}
 {{- $cluster_autoscaler := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.cluster_autoscaler -}}
 
-{{- if $cluster_autoscaler }}
+{{- if eq $cluster_autoscaler "true" }}
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:

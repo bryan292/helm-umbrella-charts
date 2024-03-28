@@ -1,6 +1,6 @@
 {{- $cluster_autoscaler := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.cluster_autoscaler -}}
 
-{{- if $cluster_autoscaler }}
+{{- if eq $cluster_autoscaler "true" }}
 apiVersion: source.toolkit.fluxcd.io/v1beta1
 kind: HelmRepository
 metadata:
