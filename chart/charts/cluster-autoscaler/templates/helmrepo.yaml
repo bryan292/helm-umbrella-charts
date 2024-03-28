@@ -1,3 +1,6 @@
+{{- $cluster_autoscaler := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.cluster_autoscaler -}}
+
+{{- if $cluster_autoscaler }}
 apiVersion: source.toolkit.fluxcd.io/v1beta1
 kind: HelmRepository
 metadata:
@@ -6,3 +9,4 @@ metadata:
 spec:
   interval: 1m
   url: https://kubernetes.github.io/autoscaler
+{{- end }}
