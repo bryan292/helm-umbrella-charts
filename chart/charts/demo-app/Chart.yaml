@@ -1,4 +1,0 @@
-apiVersion: v2
-name: demo app
-description: A Helm chart for installing the deimo application
-version: 0.0.2
