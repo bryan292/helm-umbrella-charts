@@ -1,8 +1,9 @@
 {{- $region := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.region -}}
 {{- $vpc_id := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.vpc_id -}}
 {{- $cluster_name := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.cluster_name -}}
+{{- $aws_load_balancer_controller := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.aws_load_balancer_controller -}}
 
-
+{{- if eq $aws_load_balancer_controller "true" }}
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:

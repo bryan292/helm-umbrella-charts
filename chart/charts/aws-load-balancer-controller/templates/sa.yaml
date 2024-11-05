@@ -1,5 +1,7 @@
 {{- $eks_lb_role_arn := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.eks_lb_role_arn -}}
+{{- $aws_load_balancer_controller := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.aws_load_balancer_controller -}}
 
+{{- if eq $aws_load_balancer_controller "true" }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:

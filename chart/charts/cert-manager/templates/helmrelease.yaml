@@ -1,3 +1,6 @@
+{{- $cert_manager := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.cert_manager -}}
+
+{{- if eq $cert_manager "true" }}
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:

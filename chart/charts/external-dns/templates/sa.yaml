@@ -1,5 +1,7 @@
 {{- $eks_external_dns_role_arn := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.eks_external_dns_role_arn -}}
+{{- $external_dns := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.external_dns -}}
 
+{{- if eq $external_dns "true" }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:

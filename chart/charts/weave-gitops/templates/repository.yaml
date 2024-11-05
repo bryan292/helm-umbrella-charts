@@ -1,3 +1,6 @@
+{{- $weave_gitops := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.weave_gitops -}}
+
+{{- if eq $weave_gitops "true" }}
 apiVersion: source.toolkit.fluxcd.io/v1beta1
 kind: GitRepository
 metadata:

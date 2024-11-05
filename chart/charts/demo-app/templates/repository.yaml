@@ -1,7 +1,9 @@
 {{- $repository := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.repository -}}
 {{- $app_name := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.app_name -}}
 {{- $branch := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.branch -}}
+{{- $custom_app := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.custom_app -}}
 
+{{- if eq $custom_app "true" }}
 apiVersion: source.toolkit.fluxcd.io/v1beta1
 kind: GitRepository
 metadata:

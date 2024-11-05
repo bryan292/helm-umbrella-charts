@@ -2,6 +2,7 @@
 {{- $region := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.region -}}
 {{- $hosted_zone_id := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.hosted_zone_id -}}
 {{- $eks_cm_role_arn := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.eks_cm_role_arn -}}
+{{- $email := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.email -}}
 
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer

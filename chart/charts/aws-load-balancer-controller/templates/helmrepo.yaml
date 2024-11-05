@@ -1,3 +1,6 @@
+{{- $aws_load_balancer_controller := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.aws_load_balancer_controller -}}
+
+{{- if eq $aws_load_balancer_controller "true" }}
 apiVersion: source.toolkit.fluxcd.io/v1beta1
 kind: HelmRepository
 metadata:

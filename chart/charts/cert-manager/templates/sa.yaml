@@ -1,5 +1,7 @@
 {{- $eksCmRoleArn := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.eks_cm_role_arn -}}
+{{- $cert_manager := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.cert_manager -}}
 
+{{- if eq $cert_manager "true" }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
