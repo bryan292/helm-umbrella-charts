@@ -3,7 +3,9 @@
 {{- $environment := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.environment -}}
 {{- $repository := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.repository -}}
 {{- $app_name := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.app_name -}}
+{{- $custom_app := (lookup "v1" "ConfigMap" "flux-system" "remote-config").data.custom_app -}}
 
+{{- if eq $custom_app "true" }}
 apiVersion: helm.toolkit.fluxcd.io/v2beta1
 kind: HelmRelease
 metadata:
