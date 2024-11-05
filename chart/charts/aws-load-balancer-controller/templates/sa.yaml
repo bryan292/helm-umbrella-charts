@@ -14,3 +14,4 @@ metadata:
     eks.amazonaws.com/role-arn: {{ $eks_lb_role_arn }}
     app.kubernetes.io/managed-by: "Helm"
     eks.amazonaws.com/sts-regional-endpoints: "true"
+{{- end }}

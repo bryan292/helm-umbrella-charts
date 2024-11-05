@@ -9,3 +9,4 @@ metadata:
 spec:
   interval: 1m
   url: https://aws.github.io/eks-charts
+{{- end }}

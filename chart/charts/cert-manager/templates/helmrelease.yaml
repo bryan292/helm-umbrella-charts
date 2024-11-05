@@ -23,3 +23,4 @@ spec:
       name: cert-manager
       extraArgs:
         - --issuer-ambient-credentials
+{{- end }}

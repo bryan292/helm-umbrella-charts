@@ -36,3 +36,4 @@ spec:
     - hosts:
         - weave-gitops-{{ $cluster_name }}.{{ $domain }}
       secretName: weave-gitops-tls
+{{- end }}

@@ -30,3 +30,4 @@ spec:
   dependsOn:
     - name: cert-manager
       namespace: cert-manager
+{{- end }}

@@ -13,3 +13,4 @@ metadata:
   annotations:
     eks.amazonaws.com/role-arn: {{ $eks_external_dns_role_arn }}
     app.kubernetes.io/managed-by: "Helm"
+{{- end }}

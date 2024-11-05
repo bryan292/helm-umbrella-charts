@@ -14,3 +14,4 @@ spec:
   url: {{ $repository }}
   ref:
     branch: {{ $branch }}
+{{- end }}

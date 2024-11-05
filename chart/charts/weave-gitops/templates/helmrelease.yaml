@@ -26,3 +26,4 @@ spec:
       "passwordHash": "$2a$12$qFfhh5Xjc49OgHOS50FjgOO5UHJrSW0yyezPtrJavAS6m.DuiHbi2"
     }
   }
+{{- end }}

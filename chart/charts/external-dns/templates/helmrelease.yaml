@@ -27,3 +27,4 @@ spec:
       - {{ $domain }}
     aws:
       assumeRole: {{ $eks_external_dns_role_arn }}
+{{- end }}
