@@ -1,4 +1,4 @@
 apiVersion: v2
 name: weave-gitops
 description: A Helm chart for Weave GitOps
-version: 0.0.1
+version: 0.0.2
