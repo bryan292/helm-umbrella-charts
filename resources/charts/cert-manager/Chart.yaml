@@ -1,4 +1,0 @@
-apiVersion: v2
-name: cert-manager-resources
-description: A Helm chart for custom cert-manager-resources
-version: 0.1.0
