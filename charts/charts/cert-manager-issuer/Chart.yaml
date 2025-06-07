@@ -1,0 +1,4 @@
+apiVersion: v2
+name: cert-manager-issuer
+description: Deploys the ClusterIssuer for cert-manager
+version: 0.0.1
