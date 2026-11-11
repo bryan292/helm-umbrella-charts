@@ -4,3 +4,4 @@ resources:
   - ../common
 patches:
   - path: metrics-server-delete.yaml
+  - path: cert-manager-drift-patch.yaml
