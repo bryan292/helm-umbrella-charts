@@ -1,0 +1,80 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: cert-manager, namespace: flux-system}
+spec:
+  interval: 10m
+  timeout: 10m
+  releaseName: cert-manager
+  targetNamespace: cert-manager
+  install: {createNamespace: true, remediation: {retries: 3}}
+  upgrade: {crds: CreateReplace, remediation: {retries: 3}}
+  driftDetection: {mode: enabled}
+  chart:
+    spec:
+      chart: cert-manager
+      version: v1.21.3
+      sourceRef: {kind: HelmRepository, name: cert-manager, namespace: flux-system}
+  values:
+    crds: {enabled: true}
+    replicaCount: 2
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: metrics-server, namespace: flux-system}
+spec:
+  interval: 10m
+  timeout: 10m
+  releaseName: metrics-server
+  targetNamespace: kube-system
+  install: {remediation: {retries: 3}}
+  upgrade: {remediation: {retries: 3}}
+  driftDetection: {mode: enabled}
+  chart:
+    spec:
+      chart: metrics-server
+      version: 3.14.0
+      sourceRef: {kind: HelmRepository, name: metrics-server, namespace: flux-system}
+  values:
+    replicas: 2
+    podDisruptionBudget: {enabled: true, minAvailable: 1}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: monitoring, namespace: flux-system}
+spec:
+  interval: 10m
+  timeout: 15m
+  releaseName: monitoring
+  targetNamespace: monitoring
+  install: {createNamespace: true, remediation: {retries: 3}}
+  upgrade: {crds: CreateReplace, remediation: {retries: 3}}
+  driftDetection: {mode: enabled}
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      version: 93.1.2
+      sourceRef: {kind: HelmRepository, name: monitoring, namespace: flux-system}
+  values:
+    kubeControllerManager: {enabled: false}
+    kubeScheduler: {enabled: false}
+    kubeEtcd: {enabled: false}
+    grafana:
+      ingress: {enabled: false}
+      persistence: {enabled: true, storageClassName: "${storage_class}", size: 10Gi}
+    prometheus:
+      prometheusSpec:
+        retention: 15d
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: "${storage_class}"
+              accessModes: [ReadWriteOnce]
+              resources: {requests: {storage: 30Gi}}
+    alertmanager:
+      alertmanagerSpec:
+        storage:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: "${storage_class}"
+              accessModes: [ReadWriteOnce]
+              resources: {requests: {storage: 5Gi}}

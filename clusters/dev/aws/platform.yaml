@@ -1,20 +1,16 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: certificates
+  name: platform
   namespace: flux-system
 spec:
-  dependsOn:
-    - name: platform
   interval: 10m
   retryInterval: 1m
-  timeout: 5m
-  path: ./certificates/dev
+  timeout: 20m
+  path: ./platform/aws
   prune: true
   wait: true
-  sourceRef:
-    kind: GitRepository
-    name: helm-umbrella-charts
+  sourceRef: {kind: GitRepository, name: helm-umbrella-charts}
   postBuild:
     substituteFrom:
       - kind: ConfigMap

@@ -1,0 +1,9 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: cert-manager, namespace: flux-system}
+spec:
+  values:
+    serviceAccount:
+      name: cert-manager
+      annotations:
+        eks.amazonaws.com/role-arn: ${eks_cm_role_arn}

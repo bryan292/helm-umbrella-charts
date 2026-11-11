@@ -5,11 +5,6 @@ spec: {interval: 1h, url: "https://aws.github.io/eks-charts/"}
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
-metadata: {name: cert-manager, namespace: flux-system}
-spec: {interval: 1h, url: "https://charts.jetstack.io"}
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
 metadata: {name: cluster-autoscaler, namespace: flux-system}
 spec: {interval: 1h, url: "https://kubernetes.github.io/autoscaler/"}
 ---
@@ -17,13 +12,3 @@ apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata: {name: external-dns, namespace: flux-system}
 spec: {interval: 1h, url: "https://kubernetes-sigs.github.io/external-dns/"}
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
-metadata: {name: metrics-server, namespace: flux-system}
-spec: {interval: 1h, url: "https://kubernetes-sigs.github.io/metrics-server/"}
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
-metadata: {name: monitoring, namespace: flux-system}
-spec: {interval: 1h, url: "https://prometheus-community.github.io/helm-charts/"}

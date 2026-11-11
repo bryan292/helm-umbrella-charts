@@ -14,7 +14,16 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 ENVIRONMENT = "dev"
-ROOTS = tuple(ROOT / part / ENVIRONMENT for part in ("clusters", "platform", "certificates", "applications"))
+CLUSTER_ROOTS = (
+    ROOT / "clusters" / ENVIRONMENT / "aws",
+    ROOT / "clusters" / ENVIRONMENT / "azure",
+)
+ROOTS = CLUSTER_ROOTS + (
+    ROOT / "platform" / "aws",
+    ROOT / "platform" / "azure",
+    ROOT / "certificates" / ENVIRONMENT,
+    ROOT / "applications" / ENVIRONMENT,
+)
 FLUX_APIS = {
     "HelmRelease": "helm.toolkit.fluxcd.io/v2",
     "HelmRepository": "source.toolkit.fluxcd.io/v1",
@@ -38,8 +47,20 @@ def docs(text: str) -> list[dict]:
 
 
 def variables() -> dict[str, str]:
-    config = docs((ROOT / "clusters" / ENVIRONMENT / "settings.yaml").read_text())[0]
-    return {key: str(value) for key, value in config["data"].items()}
+    return {
+        "cluster_name": "dev-test-cluster",
+        "kubernetes_version": "1.35",
+        "storage_class": "gp3",
+        "region": "us-east-1",
+        "vpc_id": "vpc-00000000000000000",
+        "domain": "test.example.com",
+        "hosted_zone_id": "ZTEST",
+        "acme_email": "admin@example.com",
+        "eks_lb_role_arn": "arn:aws:iam::123456789012:role/lb",
+        "eks_cm_role_arn": "arn:aws:iam::123456789012:role/cert-manager",
+        "eks_external_dns_role_arn": "arn:aws:iam::123456789012:role/external-dns",
+        "cluster_autoscaler_role_arn": "arn:aws:iam::123456789012:role/autoscaler",
+    }
 
 
 def substitute(value: object, values: dict[str, str]) -> object:
@@ -74,18 +95,19 @@ def check_flux(resources: list[dict]) -> None:
         if expected and ".toolkit.fluxcd.io/" in api and api != expected:
             raise RuntimeError(f"{resource.get('kind')} must use {expected}, found {api}")
 
-    cluster = docs(run("kubectl", "kustomize", str(ROOTS[0])))
-    items = {
-        item["metadata"]["name"]: item for item in cluster
-        if item.get("apiVersion") == "kustomize.toolkit.fluxcd.io/v1"
-    }
-    for name, item in items.items():
-        for dependency in item.get("spec", {}).get("dependsOn", []):
-            if dependency["name"] not in items:
-                raise RuntimeError(f"{name} depends on missing {dependency['name']}")
-        source = item["spec"].get("sourceRef", {})
-        if source != {"kind": "GitRepository", "name": "helm-umbrella-charts"}:
-            raise RuntimeError(f"{name} has unexpected sourceRef: {source}")
+    for root in CLUSTER_ROOTS:
+        cluster = docs(run("kubectl", "kustomize", str(root)))
+        items = {
+            item["metadata"]["name"]: item for item in cluster
+            if item.get("apiVersion") == "kustomize.toolkit.fluxcd.io/v1"
+        }
+        for name, item in items.items():
+            for dependency in item.get("spec", {}).get("dependsOn", []):
+                if dependency["name"] not in items:
+                    raise RuntimeError(f"{root.name}/{name} depends on missing {dependency['name']}")
+            source = item["spec"].get("sourceRef", {})
+            if source != {"kind": "GitRepository", "name": "helm-umbrella-charts"}:
+                raise RuntimeError(f"{name} has unexpected sourceRef: {source}")
     print("ok: Flux APIs, dependencies and source references")
 
 

@@ -1,21 +1,16 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: applications
+  name: platform
   namespace: flux-system
 spec:
-  dependsOn:
-    - name: platform
-    - name: certificates
   interval: 10m
   retryInterval: 1m
-  timeout: 10m
-  path: ./applications/dev
+  timeout: 20m
+  path: ./platform/azure
   prune: true
   wait: true
-  sourceRef:
-    kind: GitRepository
-    name: helm-umbrella-charts
+  sourceRef: {kind: GitRepository, name: helm-umbrella-charts}
   postBuild:
     substituteFrom:
       - kind: ConfigMap

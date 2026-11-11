@@ -1,0 +1,79 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: aws-load-balancer-controller, namespace: flux-system}
+spec:
+  interval: 10m
+  timeout: 10m
+  releaseName: aws-load-balancer-controller
+  targetNamespace: kube-system
+  install: {createNamespace: true, remediation: {retries: 3}}
+  upgrade: {remediation: {retries: 3}}
+  driftDetection: {mode: enabled}
+  chart:
+    spec:
+      chart: aws-load-balancer-controller
+      version: 3.6.2
+      sourceRef: {kind: HelmRepository, name: aws-load-balancer-controller, namespace: flux-system}
+  values:
+    clusterName: ${cluster_name}
+    region: ${region}
+    vpcId: ${vpc_id}
+    replicaCount: 2
+    serviceAccount:
+      name: aws-load-balancer-controller
+      annotations: {eks.amazonaws.com/role-arn: "${eks_lb_role_arn}"}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: cluster-autoscaler, namespace: flux-system}
+spec:
+  dependsOn: [{name: aws-load-balancer-controller}]
+  interval: 10m
+  timeout: 10m
+  releaseName: cluster-autoscaler
+  targetNamespace: kube-system
+  install: {remediation: {retries: 3}}
+  upgrade: {remediation: {retries: 3}}
+  driftDetection: {mode: enabled}
+  chart:
+    spec:
+      chart: cluster-autoscaler
+      version: 9.59.0
+      sourceRef: {kind: HelmRepository, name: cluster-autoscaler, namespace: flux-system}
+  values:
+    autoDiscovery: {clusterName: "${cluster_name}"}
+    awsRegion: ${region}
+    image: {tag: "v${kubernetes_version}.0"}
+    rbac:
+      serviceAccount:
+        name: cluster-autoscaler
+        annotations: {eks.amazonaws.com/role-arn: "${cluster_autoscaler_role_arn}"}
+    extraArgs: {balance-similar-node-groups: true, skip-nodes-with-system-pods: false}
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata: {name: external-dns, namespace: flux-system}
+spec:
+  dependsOn: [{name: aws-load-balancer-controller}]
+  interval: 10m
+  timeout: 10m
+  releaseName: external-dns
+  targetNamespace: external-dns
+  install: {createNamespace: true, remediation: {retries: 3}}
+  upgrade: {remediation: {retries: 3}}
+  driftDetection: {mode: enabled}
+  chart:
+    spec:
+      chart: external-dns
+      version: 1.23.0
+      sourceRef: {kind: HelmRepository, name: external-dns, namespace: flux-system}
+  values:
+    provider: {name: aws}
+    domainFilters: ["${domain}"]
+    policy: upsert-only
+    txtOwnerId: ${cluster_name}
+    serviceAccount:
+      name: external-dns
+      annotations: {eks.amazonaws.com/role-arn: "${eks_external_dns_role_arn}"}
+    env: [{name: AWS_DEFAULT_REGION, value: "${region}"}]
+    extraArgs: ["--zone-id-filter=${hosted_zone_id}", "--aws-zone-match-parent"]

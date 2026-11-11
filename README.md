@@ -1,21 +1,27 @@
-# EKS platform configuration with Flux
+# Multi-cloud Kubernetes platform configuration with Flux
 
 This repository contains the declarative platform configuration reconciled by
-Flux after an EKS cluster has been created. It intentionally does not create
-AWS infrastructure; that remains the responsibility of the infrastructure
-repository.
+Flux after an EKS or AKS cluster has been created. It intentionally does not
+create cloud infrastructure; that remains the responsibility of the
+infrastructure repository.
 
 ## Layout
 
 ```text
-clusters/dev/         Flux entry point and environment substitutions
-platform/dev/         namespaces, Helm repositories and platform releases
+clusters/dev/aws/     EKS Flux entry point
+clusters/dev/azure/   AKS Flux entry point
+platform/common/      provider-neutral controllers and observability
+platform/aws/         EKS-only controllers and IAM values
+platform/azure/       AKS overlay using managed Azure capabilities
 certificates/dev/     certificate issuers
 applications/dev/     application composition for the environment
 applications/example/ immutable Git source example (not enabled by default)
 ```
 
-The `clusters/dev` entry point applies components in this order:
+The provider-specific `clusters/dev/<provider>` entry point applies components
+in dependency order. The infrastructure repository creates the non-secret
+`cluster-settings` ConfigMap before Flux reconciliation, so dynamic cluster IDs
+and storage classes do not need commits in this repository.
 
 1. `platform` installs controllers and observability.
 2. `certificates` creates the ACME staging issuer.
