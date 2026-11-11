@@ -1,23 +1,73 @@
-# Helm Umbrella Charts
+# EKS platform configuration with Flux
 
-## Overview
-This repository contains a collection of Helm umbrella charts. Umbrella charts are a way to package multiple Helm charts together for easier deployment and management.
+This repository contains the declarative platform configuration reconciled by
+Flux after an EKS cluster has been created. It intentionally does not create
+AWS infrastructure; that remains the responsibility of the infrastructure
+repository.
 
-## Current Applications
-AWS Load Balance Controller
-The AWS Load Balancer Controller is essential for automating and managing load balancers in AWS. It simplifies configuration, supports advanced features like dynamic scaling and traffic routing, and integrates with other AWS services, enhancing application performance and infrastructure reliability.
+## Layout
 
-## Cert-Manager
-Cert-Manager is vital in a Kubernetes cluster to automate the management of SSL/TLS certificates. It ensures secure communication between services and automates the certificate lifecycle. We have integrated it with Letsencrypt.
+```text
+clusters/dev/         Flux entry point and environment substitutions
+platform/dev/         namespaces, Helm repositories and platform releases
+certificates/dev/     certificate issuers
+applications/dev/     application composition for the environment
+applications/example/ immutable Git source example (not enabled by default)
+```
 
-## Cluster Autoscaler
-The Cluster Autoscaler maintains the correct number of nodes to handle workloads efficiently. It automatically adjusts the size of the cluster based on current needs, scaling up when there's a demand for more resources and scaling down when resources are underutilized. This ensures optimal resource usage and cost-effectiveness.
+The `clusters/dev` entry point applies components in this order:
 
-## demo-app
-The idea of the demo-app chart is to receive, via the values file, the information for a GitHub repository that also contains a helm chart. This demo-app will create the CRD for the repository and the Helm Release.
+1. `platform` installs controllers and observability.
+2. `certificates` creates the ACME staging issuer.
+3. `applications` is reconciled only after both dependencies are ready.
 
-## External-DNS
-It synchronizes exposed Kubernetes services and Ingresses with DNS providers, making the services reachable with human-friendly domain names. This simplifies service discovery and enhances the accessibility of applications running on the cluster, this is implemented with AWS Route 53.
+All Flux custom resources use stable APIs. Environment-specific values are
+declared once in `clusters/dev/settings.yaml` and injected by Flux
+`postBuild.substituteFrom`; templates do not use live-cluster `lookup` calls.
 
-## weave-gitops
-A friendly UI useful to force syncronization of Flux sources and Helm Releases.
+## Bootstrap contract
+
+The Flux bootstrap must create a `GitRepository` named
+`helm-umbrella-charts` in `flux-system` and reconcile `./clusters/dev`.
+
+```sh
+flux bootstrap github \
+  --owner=<owner> \
+  --repository=<repository> \
+  --branch=main \
+  --path=clusters/dev
+```
+
+Before bootstrapping another environment, copy the four `dev` directories
+and replace every value in its `settings.yaml`. IAM role ARNs are identifiers,
+not credentials. Secrets and private Git credentials must be created outside
+Git or encrypted with SOPS.
+
+## Safe defaults
+
+- Let's Encrypt uses the staging endpoint until certificate issuance is proven.
+- ExternalDNS is restricted to one hosted zone and uses `upsert-only` policy.
+- Grafana has no public ingress; use port-forwarding or an authenticated private
+  ingress.
+- The sample application is disabled and pins a full Git commit.
+- Releases have retries, timeouts, drift detection and explicit chart versions.
+
+## Validation
+
+```sh
+python3 -m venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python scripts/validate.py
+```
+
+The validator builds every Kustomize root, performs strict Flux substitution,
+checks dependency/source references and security policies, downloads each
+pinned chart and renders it with the configured values. It does not connect to
+a Kubernetes cluster or modify AWS.
+
+## Migration warning
+
+Do not point Flux at this repository while Terraform (or another Flux source)
+still owns HelmReleases with the same names. First choose one owner, migrate
+state deliberately and then bootstrap this path. Two reconcilers managing the
+same resources will cause drift and unstable rollouts.

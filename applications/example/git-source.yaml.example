@@ -1,0 +1,10 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata: {name: example-app, namespace: flux-system}
+spec:
+  interval: 5m
+  url: https://github.com/example/example-app
+  ref:
+    commit: 0123456789abcdef0123456789abcdef01234567
+  # For private Git, reference a Secret encrypted with SOPS or created outside Git.
+  # secretRef: {name: example-app-git-auth}
