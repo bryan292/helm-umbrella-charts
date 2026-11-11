@@ -8,7 +8,21 @@ spec:
   targetNamespace: cert-manager
   install: {createNamespace: true, remediation: {retries: 3}}
   upgrade: {crds: CreateReplace, remediation: {retries: 3}}
-  driftDetection: {mode: enabled}
+  driftDetection:
+    mode: enabled
+    ignore:
+      - paths: [/webhooks/0/clientConfig/caBundle]
+        target:
+          group: admissionregistration.k8s.io
+          version: v1
+          kind: ValidatingWebhookConfiguration
+          name: cert-manager-webhook
+      - paths: [/webhooks/0/clientConfig/caBundle]
+        target:
+          group: admissionregistration.k8s.io
+          version: v1
+          kind: MutatingWebhookConfiguration
+          name: cert-manager-webhook
   chart:
     spec:
       chart: cert-manager
