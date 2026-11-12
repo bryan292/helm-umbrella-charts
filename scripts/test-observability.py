@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Run real PromQL rule tests using the deployed Prometheus version."""
 import json
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -44,7 +45,8 @@ def main():
         (temp / 'rules.yaml').write_text(yaml.safe_dump(rules))
         (temp / 'test.yaml').write_text((ROOT / 'tests/observability.test.yaml').read_text())
         for arguments in [('check', 'rules', '/test/rules.yaml'), ('test', 'rules', '/test/test.yaml')]:
-            subprocess.run(['docker', 'run', '--rm', '--entrypoint', '/bin/promtool',
+            subprocess.run(['docker', 'run', '--rm', '--user', f'{os.getuid()}:{os.getgid()}',
+                            '--entrypoint', '/bin/promtool',
                             '-v', f'{temp}:/test:ro', IMAGE, *arguments], check=True)
 
 
