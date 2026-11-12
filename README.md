@@ -77,3 +77,10 @@ Do not point Flux at this repository while Terraform (or another Flux source)
 still owns HelmReleases with the same names. First choose one owner, migrate
 state deliberately and then bootstrap this path. Two reconcilers managing the
 same resources will cause drift and unstable rollouts.
+
+## Observability
+
+See [platform observability](docs/observability.md) for the shared dashboard, Flux SLO,
+private access, bounded log retention, cost estimates and controlled alert acceptance.
+Run `python scripts/test-observability.py` to test the PromQL rules using the pinned
+Prometheus container; Docker is required for this check.

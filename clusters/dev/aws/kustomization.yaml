@@ -4,3 +4,4 @@ resources:
   - platform.yaml
   - certificates.yaml
   - applications.yaml
+  - observability.yaml

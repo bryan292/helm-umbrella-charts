@@ -4,3 +4,4 @@ resources:
   - namespaces.yaml
   - repositories.yaml
   - releases.yaml
+  - observability-releases.yaml

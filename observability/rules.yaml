@@ -1,0 +1,47 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: platform-observability
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+  - name: platform.reconciliation
+    interval: 30s
+    rules:
+    - record: platform:reconciliation_available:ratio
+      expr: (((sum(gotk_resource_info{exported_namespace="flux-system",name!="observability-acceptance",ready="True",suspended!="true"})
+        or vector(0)) / clamp_min(sum(gotk_resource_info{exported_namespace="flux-system",name!="observability-acceptance"}),
+        1)) == bool 1) or vector(0)
+    - record: platform:reconciliation_availability:30d
+      expr: avg_over_time(platform:reconciliation_available:ratio[30d])
+    - record: platform:reconciliation_error_budget_remaining:30d
+      expr: 1 - ((1 - platform:reconciliation_availability:30d) / 0.001)
+    - alert: FluxReconciliationFailure
+      expr: max by (kind, name, exported_namespace) (gotk_resource_info{ready!="True"})
+        == 1
+      for: 2m
+      labels:
+        severity: warning
+        team: platform
+      annotations:
+        summary: A Flux resource has not been ready for two minutes.
+        runbook_url: https://github.com/bryan292/helm-umbrella-charts/blob/codex/spec008-observability/docs/observability.md
+    - alert: FluxTelemetryMissing
+      expr: absent(gotk_resource_info{exported_namespace="flux-system"})
+      for: 5m
+      labels:
+        severity: critical
+        team: platform
+      annotations:
+        summary: Flux resource state telemetry is missing.
+    - alert: PlatformReconciliationBudgetBurn
+      expr: avg_over_time(platform:reconciliation_available:ratio[1h]) < 0.99 and
+        avg_over_time(platform:reconciliation_available:ratio[5m]) < 0.99
+      for: 5m
+      labels:
+        severity: warning
+        team: platform
+      annotations:
+        summary: Platform reconciliation availability is consuming its error budget.

@@ -1,0 +1,86 @@
+rule_files:
+- rules.yaml
+evaluation_interval: 30s
+tests:
+- name: healthy platform
+  interval: 30s
+  input_series:
+  - series: gotk_resource_info{kind="Kustomization",name="platform",exported_namespace="flux-system",ready="True"}
+    values: 1+0x20
+  alert_rule_test:
+  - eval_time: 5m
+    alertname: FluxReconciliationFailure
+    exp_alerts: []
+  promql_expr_test:
+  - expr: platform:reconciliation_available:ratio
+    eval_time: 5m
+    exp_samples:
+    - labels: platform:reconciliation_available:ratio
+      value: 1
+- name: failure fires and then resolves
+  interval: 30s
+  input_series:
+  - series: gotk_resource_info{kind="Kustomization",name="platform",exported_namespace="flux-system",ready="False"}
+    values: 1+0x8 stale
+  - series: gotk_resource_info{kind="Kustomization",name="platform",exported_namespace="flux-system",ready="True"}
+    values: _ _ _ _ _ _ _ _ _ 1+0x12
+  alert_rule_test:
+  - eval_time: 1m
+    alertname: FluxReconciliationFailure
+    exp_alerts: []
+  - eval_time: 3m
+    alertname: FluxReconciliationFailure
+    exp_alerts:
+    - exp_labels:
+        kind: Kustomization
+        name: platform
+        exported_namespace: flux-system
+        severity: warning
+        team: platform
+      exp_annotations:
+        summary: A Flux resource has not been ready for two minutes.
+        runbook_url: https://github.com/bryan292/helm-umbrella-charts/blob/codex/spec008-observability/docs/observability.md
+  - eval_time: 6m
+    alertname: FluxReconciliationFailure
+    exp_alerts: []
+  promql_expr_test:
+  - expr: platform:reconciliation_available:ratio
+    eval_time: 3m
+    exp_samples:
+    - labels: platform:reconciliation_available:ratio
+      value: 0
+  - expr: platform:reconciliation_available:ratio
+    eval_time: 6m
+    exp_samples:
+    - labels: platform:reconciliation_available:ratio
+      value: 1
+- name: missing telemetry never means healthy
+  interval: 30s
+  input_series: []
+  alert_rule_test:
+  - eval_time: 6m
+    alertname: FluxTelemetryMissing
+    exp_alerts:
+    - exp_labels:
+        exported_namespace: flux-system
+        severity: critical
+        team: platform
+      exp_annotations:
+        summary: Flux resource state telemetry is missing.
+  promql_expr_test:
+  - expr: platform:reconciliation_available:ratio
+    eval_time: 6m
+    exp_samples:
+    - labels: platform:reconciliation_available:ratio
+      value: 0
+- name: suspended ready resource is unavailable
+  interval: 30s
+  input_series:
+  - series: gotk_resource_info{kind="Kustomization",name="platform",exported_namespace="flux-system",ready="True",suspended="true"}
+    values: 1+0x20
+  promql_expr_test:
+  - expr: platform:reconciliation_available:ratio
+    eval_time: 5m
+    exp_samples:
+    - labels: platform:reconciliation_available:ratio
+      value: 0

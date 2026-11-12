@@ -21,3 +21,4 @@ jobs:
           cache: pip
       - run: pip install -r requirements-dev.txt
       - run: python scripts/validate.py
+      - run: python scripts/test-observability.py

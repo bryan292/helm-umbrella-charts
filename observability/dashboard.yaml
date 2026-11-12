@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: multicloud-platform-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: '1'
+data:
+  multicloud-platform.json: "{\n  \"uid\": \"multicloud-platform\",\n  \"title\":\
+    \ \"Multicloud platform operations\",\n  \"schemaVersion\": 39,\n  \"version\"\
+    : 1,\n  \"tags\": [\n    \"platform\",\n    \"multicloud\"\n  ],\n  \"timezone\"\
+    : \"browser\",\n  \"refresh\": \"30s\",\n  \"time\": {\n    \"from\": \"now-6h\"\
+    ,\n    \"to\": \"now\"\n  },\n  \"panels\": [\n    {\n      \"id\": 1,\n     \
+    \ \"type\": \"timeseries\",\n      \"title\": \"Reconciliation availability now\"\
+    ,\n      \"datasource\": {\n        \"type\": \"prometheus\",\n        \"uid\"\
+    : \"prometheus\"\n      },\n      \"gridPos\": {\n        \"x\": 0,\n        \"\
+    y\": 0,\n        \"w\": 12,\n        \"h\": 8\n      },\n      \"targets\": [\n\
+    \        {\n          \"refId\": \"A\",\n          \"expr\": \"platform:reconciliation_available:ratio\"\
+    ,\n          \"legendFormat\": \"{{namespace}} {{kind}} {{ready}}\"\n        }\n\
+    \      ],\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\"\
+    : \"percentunit\"\n        },\n        \"overrides\": []\n      }\n    },\n  \
+    \  {\n      \"id\": 2,\n      \"type\": \"timeseries\",\n      \"title\": \"Reconciliation\
+    \ availability 30d (history may be partial)\",\n      \"datasource\": {\n    \
+    \    \"type\": \"prometheus\",\n        \"uid\": \"prometheus\"\n      },\n  \
+    \    \"gridPos\": {\n        \"x\": 12,\n        \"y\": 0,\n        \"w\": 12,\n\
+    \        \"h\": 8\n      },\n      \"targets\": [\n        {\n          \"refId\"\
+    : \"A\",\n          \"expr\": \"platform:reconciliation_availability:30d\",\n\
+    \          \"legendFormat\": \"{{namespace}} {{kind}} {{ready}}\"\n        }\n\
+    \      ],\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\"\
+    : \"percentunit\"\n        },\n        \"overrides\": []\n      }\n    },\n  \
+    \  {\n      \"id\": 3,\n      \"type\": \"timeseries\",\n      \"title\": \"Remaining\
+    \ 30d error budget\",\n      \"datasource\": {\n        \"type\": \"prometheus\"\
+    ,\n        \"uid\": \"prometheus\"\n      },\n      \"gridPos\": {\n        \"\
+    x\": 0,\n        \"y\": 8,\n        \"w\": 12,\n        \"h\": 8\n      },\n \
+    \     \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"expr\"\
+    : \"platform:reconciliation_error_budget_remaining:30d\",\n          \"legendFormat\"\
+    : \"{{namespace}} {{kind}} {{ready}}\"\n        }\n      ],\n      \"fieldConfig\"\
+    : {\n        \"defaults\": {\n          \"unit\": \"percentunit\"\n        },\n\
+    \        \"overrides\": []\n      }\n    },\n    {\n      \"id\": 4,\n      \"\
+    type\": \"timeseries\",\n      \"title\": \"Flux resources by readiness\",\n \
+    \     \"datasource\": {\n        \"type\": \"prometheus\",\n        \"uid\": \"\
+    prometheus\"\n      },\n      \"gridPos\": {\n        \"x\": 12,\n        \"y\"\
+    : 8,\n        \"w\": 12,\n        \"h\": 8\n      },\n      \"targets\": [\n \
+    \       {\n          \"refId\": \"A\",\n          \"expr\": \"sum by (kind, ready)\
+    \ (gotk_resource_info)\",\n          \"legendFormat\": \"{{namespace}} {{kind}}\
+    \ {{ready}}\"\n        }\n      ],\n      \"fieldConfig\": {\n        \"defaults\"\
+    : {\n          \"unit\": \"short\"\n        },\n        \"overrides\": []\n  \
+    \    }\n    },\n    {\n      \"id\": 5,\n      \"type\": \"timeseries\",\n   \
+    \   \"title\": \"Flux reconciliation p95 seconds\",\n      \"datasource\": {\n\
+    \        \"type\": \"prometheus\",\n        \"uid\": \"prometheus\"\n      },\n\
+    \      \"gridPos\": {\n        \"x\": 0,\n        \"y\": 16,\n        \"w\": 12,\n\
+    \        \"h\": 8\n      },\n      \"targets\": [\n        {\n          \"refId\"\
+    : \"A\",\n          \"expr\": \"histogram_quantile(0.95, sum by (le, kind) (rate(gotk_reconcile_duration_seconds_bucket[5m])))\"\
+    ,\n          \"legendFormat\": \"{{namespace}} {{kind}} {{ready}}\"\n        }\n\
+    \      ],\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\"\
+    : \"s\"\n        },\n        \"overrides\": []\n      }\n    },\n    {\n     \
+    \ \"id\": 6,\n      \"type\": \"timeseries\",\n      \"title\": \"Node hourly\
+    \ cost estimate (not invoice)\",\n      \"datasource\": {\n        \"type\": \"\
+    prometheus\",\n        \"uid\": \"prometheus\"\n      },\n      \"gridPos\": {\n\
+    \        \"x\": 12,\n        \"y\": 16,\n        \"w\": 12,\n        \"h\": 8\n\
+    \      },\n      \"targets\": [\n        {\n          \"refId\": \"A\",\n    \
+    \      \"expr\": \"sum(node_total_hourly_cost)\",\n          \"legendFormat\"\
+    : \"{{namespace}} {{kind}} {{ready}}\"\n        }\n      ],\n      \"fieldConfig\"\
+    : {\n        \"defaults\": {\n          \"unit\": \"currencyUSD\"\n        },\n\
+    \        \"overrides\": []\n      }\n    },\n    {\n      \"id\": 7,\n      \"\
+    type\": \"timeseries\",\n      \"title\": \"CPU requested by namespace\",\n  \
+    \    \"datasource\": {\n        \"type\": \"prometheus\",\n        \"uid\": \"\
+    prometheus\"\n      },\n      \"gridPos\": {\n        \"x\": 0,\n        \"y\"\
+    : 24,\n        \"w\": 12,\n        \"h\": 8\n      },\n      \"targets\": [\n\
+    \        {\n          \"refId\": \"A\",\n          \"expr\": \"sum by (namespace)\
+    \ (kube_pod_container_resource_requests{resource=\\\"cpu\\\"})\",\n          \"\
+    legendFormat\": \"{{namespace}} {{kind}} {{ready}}\"\n        }\n      ],\n  \
+    \    \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"cores\"\
+    \n        },\n        \"overrides\": []\n      }\n    },\n    {\n      \"id\"\
+    : 8,\n      \"type\": \"timeseries\",\n      \"title\": \"Memory requested by\
+    \ namespace\",\n      \"datasource\": {\n        \"type\": \"prometheus\",\n \
+    \       \"uid\": \"prometheus\"\n      },\n      \"gridPos\": {\n        \"x\"\
+    : 12,\n        \"y\": 24,\n        \"w\": 12,\n        \"h\": 8\n      },\n  \
+    \    \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"expr\"\
+    : \"sum by (namespace) (kube_pod_container_resource_requests{resource=\\\"memory\\\
+    \"})\",\n          \"legendFormat\": \"{{namespace}} {{kind}} {{ready}}\"\n  \
+    \      }\n      ],\n      \"fieldConfig\": {\n        \"defaults\": {\n      \
+    \    \"unit\": \"bytes\"\n        },\n        \"overrides\": []\n      }\n   \
+    \ },\n    {\n      \"id\": 9,\n      \"type\": \"timeseries\",\n      \"title\"\
+    : \"CPU used by namespace\",\n      \"datasource\": {\n        \"type\": \"prometheus\"\
+    ,\n        \"uid\": \"prometheus\"\n      },\n      \"gridPos\": {\n        \"\
+    x\": 0,\n        \"y\": 32,\n        \"w\": 12,\n        \"h\": 8\n      },\n\
+    \      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"expr\"\
+    : \"sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=\\\"\
+    \\\",container!=\\\"POD\\\"}[5m]))\",\n          \"legendFormat\": \"{{namespace}}\
+    \ {{kind}} {{ready}}\"\n        }\n      ],\n      \"fieldConfig\": {\n      \
+    \  \"defaults\": {\n          \"unit\": \"cores\"\n        },\n        \"overrides\"\
+    : []\n      }\n    },\n    {\n      \"id\": 10,\n      \"type\": \"logs\",\n \
+    \     \"title\": \"Flux logs\",\n      \"datasource\": {\n        \"type\": \"\
+    loki\",\n        \"uid\": \"loki\"\n      },\n      \"gridPos\": {\n        \"\
+    x\": 12,\n        \"y\": 32,\n        \"w\": 12,\n        \"h\": 8\n      },\n\
+    \      \"targets\": [\n        {\n          \"refId\": \"A\",\n          \"expr\"\
+    : \"{namespace=\\\"flux-system\\\"}\",\n          \"queryType\": \"range\"\n \
+    \       }\n      ]\n    }\n  ]\n}"

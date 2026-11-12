@@ -21,6 +21,7 @@ CLUSTER_ROOTS = (
 ROOTS = CLUSTER_ROOTS + (
     ROOT / "platform" / "aws",
     ROOT / "platform" / "azure",
+    ROOT / "observability",
     ROOT / "certificates" / ENVIRONMENT,
     ROOT / "applications" / ENVIRONMENT,
 )
@@ -49,6 +50,7 @@ def docs(text: str) -> list[dict]:
 def variables() -> dict[str, str]:
     return {
         "cluster_name": "dev-test-cluster",
+        "provider": "aws",
         "kubernetes_version": "1.35",
         "storage_class": "gp3",
         "region": "us-east-1",
@@ -133,6 +135,20 @@ def check_security(resources: list[dict]) -> None:
     grafana = releases["monitoring"]["spec"]["values"]["grafana"]
     if grafana["ingress"].get("enabled") is not False:
         raise RuntimeError("Grafana ingress must remain disabled by default")
+    logs = releases['loki']['spec']['values']
+    if logs['loki']['limits_config']['retention_period'] != '72h' or logs['singleBinary']['persistence']['enableStatefulSetAutoDeletePVC']:
+        raise RuntimeError('Loki must retain PVCs and bound log retention')
+    alloy = releases['alloy']['spec']['values']
+    if alloy['controller']['type'] != 'deployment' or any(alloy['alloy']['mounts'].values()):
+        raise RuntimeError('Alloy must collect through the API without host mounts')
+    if alloy['rbac']['namespaces'] != ['flux-system', 'monitoring'] or any('secrets' in rule['resources'] for rule in alloy['rbac']['rules']):
+        raise RuntimeError('Alloy log permissions must remain namespace-scoped without secrets')
+    metric_config = releases['monitoring']['spec']['values']['kube-state-metrics']['customResourceState']['config']['spec']['resources']
+    if {item['groupVersionKind']['kind'] for item in metric_config} != {'Kustomization', 'HelmRelease', 'GitRepository'}:
+        raise RuntimeError('Flux resource state collectors are incomplete')
+    costs = releases['opencost']['spec']['values']['opencost']
+    if costs['ui']['enabled'] or not costs['metrics']['serviceMonitor']['enabled']:
+        raise RuntimeError('OpenCost must expose internal metrics with its UI disabled')
     print("ok: repository security policies")
 
 
@@ -161,11 +177,19 @@ def render_charts(resources: list[dict], values: dict[str, str]) -> None:
             source = chart["sourceRef"]["name"]
             values_file = temp / f"{name}.yaml"
             values_file.write_text(yaml.safe_dump(substitute(spec.get("values", {}), values), sort_keys=False))
-            run(
+            rendered = docs(run(
                 "helm", "template", spec.get("releaseName", name),
                 f"{source}/{chart['chart']}", "--version", str(chart["version"]),
                 "--namespace", spec["targetNamespace"], "--values", str(values_file), env=env,
-            )
+            ))
+            if name in {"monitoring", "loki", "alloy", "opencost"}:
+                for item in rendered:
+                    if item.get("kind") in {"Ingress", "HTTPRoute", "Gateway"}:
+                        raise RuntimeError(f"{name}: administrative route must remain private")
+                    if item.get("kind") == "Service":
+                        service = item.get("spec", {})
+                        if service.get("type", "ClusterIP") != "ClusterIP" or service.get("externalIPs"):
+                            raise RuntimeError(f"{name}: administrative service must remain ClusterIP")
             print(f"ok: helm render {name} ({chart['version']})")
 
 

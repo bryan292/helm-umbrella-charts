@@ -54,41 +54,209 @@ spec:
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
-metadata: {name: monitoring, namespace: flux-system}
+metadata:
+  name: monitoring
+  namespace: flux-system
 spec:
   interval: 10m
   timeout: 15m
   releaseName: monitoring
   targetNamespace: monitoring
-  install: {createNamespace: true, remediation: {retries: 3}}
-  upgrade: {crds: CreateReplace, remediation: {retries: 3}}
-  driftDetection: {mode: enabled}
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  driftDetection:
+    mode: enabled
   chart:
     spec:
       chart: kube-prometheus-stack
       version: 93.1.2
-      sourceRef: {kind: HelmRepository, name: monitoring, namespace: flux-system}
+      sourceRef:
+        kind: HelmRepository
+        name: monitoring
+        namespace: flux-system
   values:
-    kubeControllerManager: {enabled: false}
-    kubeScheduler: {enabled: false}
-    kubeEtcd: {enabled: false}
+    kubeControllerManager:
+      enabled: false
+    kubeScheduler:
+      enabled: false
+    kubeEtcd:
+      enabled: false
     grafana:
-      ingress: {enabled: false}
-      persistence: {enabled: true, storageClassName: "${storage_class}", size: 10Gi}
+      ingress:
+        enabled: false
+      persistence:
+        enabled: true
+        storageClassName: ${storage_class}
+        size: 10Gi
+      service:
+        type: ClusterIP
+      additionalDataSources:
+      - name: Loki
+        uid: loki
+        type: loki
+        access: proxy
+        url: http://loki.monitoring.svc:3100
+        editable: false
     prometheus:
       prometheusSpec:
-        retention: 15d
+        retention: 35d
         storageSpec:
           volumeClaimTemplate:
             spec:
-              storageClassName: "${storage_class}"
-              accessModes: [ReadWriteOnce]
-              resources: {requests: {storage: 30Gi}}
+              storageClassName: ${storage_class}
+              accessModes:
+              - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 30Gi
+        retentionSize: 24GB
+        externalLabels:
+          cluster: ${cluster_name}
+          provider: ${provider}
+      ingress:
+        enabled: false
+      service:
+        type: ClusterIP
     alertmanager:
       alertmanagerSpec:
         storage:
           volumeClaimTemplate:
             spec:
-              storageClassName: "${storage_class}"
-              accessModes: [ReadWriteOnce]
-              resources: {requests: {storage: 5Gi}}
+              storageClassName: ${storage_class}
+              accessModes:
+              - ReadWriteOnce
+              resources:
+                requests:
+                  storage: 5Gi
+      ingress:
+        enabled: false
+      service:
+        type: ClusterIP
+    kube-state-metrics:
+      rbac:
+        extraRules:
+        - apiGroups:
+          - kustomize.toolkit.fluxcd.io
+          resources:
+          - kustomizations
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - helm.toolkit.fluxcd.io
+          resources:
+          - helmreleases
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - source.toolkit.fluxcd.io
+          resources:
+          - gitrepositories
+          verbs:
+          - get
+          - list
+          - watch
+      customResourceState:
+        enabled: true
+        config:
+          spec:
+            resources:
+            - groupVersionKind:
+                group: kustomize.toolkit.fluxcd.io
+                version: v1
+                kind: Kustomization
+              metricNamePrefix: gotk
+              labelsFromPath:
+                kind:
+                - kind
+              metrics:
+              - name: resource_info
+                help: Current Flux resource readiness.
+                each:
+                  type: Info
+                  info:
+                    labelsFromPath:
+                      name:
+                      - metadata
+                      - name
+                labelsFromPath:
+                  exported_namespace:
+                  - metadata
+                  - namespace
+                  ready:
+                  - status
+                  - conditions
+                  - '[type=Ready]'
+                  - status
+                  suspended:
+                  - spec
+                  - suspend
+            - groupVersionKind:
+                group: helm.toolkit.fluxcd.io
+                version: v2
+                kind: HelmRelease
+              metricNamePrefix: gotk
+              labelsFromPath:
+                kind:
+                - kind
+              metrics:
+              - name: resource_info
+                help: Current Flux resource readiness.
+                each:
+                  type: Info
+                  info:
+                    labelsFromPath:
+                      name:
+                      - metadata
+                      - name
+                labelsFromPath:
+                  exported_namespace:
+                  - metadata
+                  - namespace
+                  ready:
+                  - status
+                  - conditions
+                  - '[type=Ready]'
+                  - status
+                  suspended:
+                  - spec
+                  - suspend
+            - groupVersionKind:
+                group: source.toolkit.fluxcd.io
+                version: v1
+                kind: GitRepository
+              metricNamePrefix: gotk
+              labelsFromPath:
+                kind:
+                - kind
+              metrics:
+              - name: resource_info
+                help: Current Flux resource readiness.
+                each:
+                  type: Info
+                  info:
+                    labelsFromPath:
+                      name:
+                      - metadata
+                      - name
+                labelsFromPath:
+                  exported_namespace:
+                  - metadata
+                  - namespace
+                  ready:
+                  - status
+                  - conditions
+                  - '[type=Ready]'
+                  - status
+                  suspended:
+                  - spec
+                  - suspend

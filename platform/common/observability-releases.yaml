@@ -1,0 +1,222 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: loki
+  namespace: flux-system
+spec:
+  interval: 10m
+  timeout: 15m
+  releaseName: loki
+  targetNamespace: monitoring
+  dependsOn:
+  - name: monitoring
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  driftDetection:
+    mode: enabled
+  chart:
+    spec:
+      chart: loki
+      version: 21.2.1
+      sourceRef:
+        kind: HelmRepository
+        name: grafana-community
+        namespace: flux-system
+  values:
+    deploymentMode: Monolithic
+    loki:
+      auth_enabled: false
+      commonConfig:
+        replication_factor: 1
+      storage:
+        type: filesystem
+      schemaConfig:
+        configs:
+        - from: '2024-01-01'
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: index_
+            period: 24h
+      limits_config:
+        retention_period: 72h
+      compactor:
+        working_directory: /var/loki/compactor
+        retention_enabled: true
+        delete_request_store: filesystem
+    singleBinary:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: '1'
+          memory: 1Gi
+      persistence:
+        enabled: true
+        enableStatefulSetAutoDeletePVC: false
+        whenDeleted: Retain
+        whenScaled: Retain
+        storageClass: ${storage_class}
+        size: 10Gi
+    gateway:
+      enabled: false
+    lokiCanary:
+      enabled: false
+    chunksCache:
+      enabled: false
+    resultsCache:
+      enabled: false
+    test:
+      enabled: false
+    backend:
+      replicas: 0
+    read:
+      replicas: 0
+    write:
+      replicas: 0
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: alloy
+  namespace: flux-system
+spec:
+  interval: 10m
+  timeout: 15m
+  releaseName: alloy
+  targetNamespace: monitoring
+  dependsOn:
+  - name: monitoring
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  driftDetection:
+    mode: enabled
+  chart:
+    spec:
+      chart: alloy
+      version: 1.15.0
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: flux-system
+  values:
+    crds:
+      create: false
+    controller:
+      type: deployment
+      replicas: 1
+    global:
+      podSecurityContext:
+        runAsNonRoot: true
+        runAsUser: 473
+        runAsGroup: 473
+        fsGroup: 473
+    alloy:
+      configMap:
+        content: "logging { level = \"warn\" }\ndiscovery.kubernetes \"platform\"\
+          \ {\n  role = \"pod\"\n  namespaces { names = [\"flux-system\", \"monitoring\"\
+          ] }\n}\ndiscovery.relabel \"platform\" {\n  targets = discovery.kubernetes.platform.targets\n\
+          \  rule {\n    source_labels = [\"__meta_kubernetes_namespace\"]\n    target_label\
+          \ = \"namespace\"\n  }\n  rule {\n    source_labels = [\"__meta_kubernetes_pod_name\"\
+          ]\n    target_label = \"pod\"\n  }\n  rule {\n    source_labels = [\"__meta_kubernetes_pod_container_name\"\
+          ]\n    target_label = \"container\"\n  }\n  rule {\n    target_label = \"\
+          cluster\"\n    replacement = \"${cluster_name}\"\n  }\n}\nloki.source.kubernetes\
+          \ \"platform\" {\n  targets = discovery.relabel.platform.output\n  forward_to\
+          \ = [loki.write.local.receiver]\n}\nloki.write \"local\" {\n  endpoint {\
+          \ url = \"http://loki.monitoring.svc:3100/loki/api/v1/push\" }\n}\n"
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 300m
+          memory: 384Mi
+      mounts:
+        varlog: false
+        dockercontainers: false
+    rbac:
+      create: true
+      namespaces:
+      - flux-system
+      - monitoring
+      rules:
+      - apiGroups:
+        - ''
+        resources:
+        - pods
+        - pods/log
+        verbs:
+        - get
+        - list
+        - watch
+    service:
+      type: ClusterIP
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: opencost
+  namespace: flux-system
+spec:
+  interval: 10m
+  timeout: 15m
+  releaseName: opencost
+  targetNamespace: monitoring
+  dependsOn:
+  - name: monitoring
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  driftDetection:
+    mode: enabled
+  chart:
+    spec:
+      chart: opencost
+      version: 2.5.34
+      sourceRef:
+        kind: HelmRepository
+        name: opencost
+        namespace: flux-system
+  values:
+    opencost:
+      exporter:
+        defaultClusterId: ${cluster_name}
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      ui:
+        enabled: false
+      prometheus:
+        internal:
+          enabled: true
+          serviceName: monitoring-kube-prometheus-prometheus
+          namespaceName: monitoring
+          port: 9090
+      metrics:
+        serviceMonitor:
+          enabled: true
+          additionalLabels:
+            release: monitoring
