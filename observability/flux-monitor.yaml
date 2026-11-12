@@ -10,8 +10,16 @@ spec:
     matchNames:
     - flux-system
   selector:
-    matchLabels:
-      app.kubernetes.io/part-of: flux
+    matchExpressions:
+    - key: app
+      operator: In
+      values:
+      - helm-controller
+      - kustomize-controller
+      - source-controller
+      - notification-controller
+      - image-automation-controller
+      - image-reflector-controller
   podMetricsEndpoints:
   - port: http-prom
     interval: 30s

@@ -12,6 +12,25 @@ IMAGE = 'quay.io/prometheus/prometheus:v3.16.0-distroless@sha256:9764044e09eb2c9
 
 
 def main():
+    # Keep this version aligned with infrastructure-modules/kubernetes/main.tf.
+    rendered = subprocess.check_output(['helm', 'template', 'flux2', 'flux2', '--version', '2.20.0',
+        '--repo', 'https://fluxcd-community.github.io/helm-charts', '--namespace', 'flux-system'], text=True)
+    monitor = yaml.safe_load((ROOT / 'observability/flux-monitor.yaml').read_text())['spec']
+    expression = monitor['selector']['matchExpressions'][0]
+    assert expression['key'] == 'app' and expression['operator'] == 'In'
+    expected = set(expression['values'])
+    selected = set()
+    for resource in yaml.safe_load_all(rendered):
+        if not resource or resource.get('kind') != 'Deployment':
+            continue
+        template = resource['spec']['template']
+        app = template['metadata']['labels'].get('app')
+        if app in expected:
+            assert any(port['name'] == monitor['podMetricsEndpoints'][0]['port']
+                       for container in template['spec']['containers'] for port in container.get('ports', []))
+            selected.add(app)
+    assert selected == expected and len(selected) == 6, 'PodMonitor must match all six installed Flux controllers'
+    print('Flux PodMonitor matches the pinned Helm chart pods and ports', flush=True)
     rules = yaml.safe_load((ROOT / 'observability/rules.yaml').read_text())['spec']
     dashboard = yaml.safe_load((ROOT / 'observability/dashboard.yaml').read_text())
     panels = json.loads(dashboard['data']['multicloud-platform.json'])['panels']
