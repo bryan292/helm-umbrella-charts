@@ -14,7 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-helm@v4
+        with:
+          version: v4.2.3
       - uses: azure/setup-kubectl@v4
+        with:
+          version: v1.36.3
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
